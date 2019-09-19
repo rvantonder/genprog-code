@@ -85,11 +85,11 @@ type effect =
 
 (* debugging *)
 let effect_to_str e = match e with
-  | Read_Var(v) -> Printf.sprintf "r %s" v.vname
-  | Write_Var(v) -> Printf.sprintf "w %s" v.vname
-  | Read_Mem(e) -> Printf.sprintf "R %s"
+  | Read_Var v -> Printf.sprintf "r %s" v.vname
+  | Write_Var v -> Printf.sprintf "w %s" v.vname
+  | Read_Mem e -> Printf.sprintf "R %s"
                      (Pretty.sprint ~width:80 (dn_exp () e))
-  | Write_Mem(e) -> Printf.sprintf "W %s"
+  | Write_Mem e -> Printf.sprintf "W %s"
                       (Pretty.sprint ~width:80 (dn_exp () e))
   | File_IO -> "i/o"
   | Other -> "other"
@@ -138,7 +138,7 @@ class collectEffects  (loop_count : int ref)
 
     method vstmt s =
       match s.skind with
-      | Loop(_) ->
+      | Loop _ ->
         incr loop_count ;
         ChangeDoChildrenPost(s, (fun s -> decr loop_count ; s))
 
@@ -334,11 +334,9 @@ let var_mem_alias (varinfo : Cil.varinfo) (memexp : Cil.exp) : bool =
  * same partition (= equivalence class = element of the quotient space).
 *)
 let dependency_exists es1 es2 =
-  EffectSet.exists (fun eff1 ->
-      match eff1 with
-      | Read_Var(s) ->
-        EffectSet.exists (fun eff2 ->
-            match eff2 with
+  EffectSet.exists (function
+      | Read_Var s ->
+        EffectSet.exists (function
             (* Simple case: if you read from X and I write to X, we
              * have a conflict. *)
             | Write_Var(s2) when s.vname = s2.vname -> true
@@ -350,9 +348,8 @@ let dependency_exists es1 es2 =
             | Other -> true
             | _ -> false
           ) es2
-      | Write_Var(s) ->
-        EffectSet.exists (fun eff2 ->
-            match eff2 with
+      | Write_Var s ->
+        EffectSet.exists (function
             | Write_Var(s2)
             | Read_Var(s2) when s.vname = s2.vname -> true
             | Write_Mem(exp2)
@@ -360,17 +357,15 @@ let dependency_exists es1 es2 =
             | Other -> true
             | _ -> false
           ) es2
-      | Read_Mem(exp1) ->
-        EffectSet.exists (fun eff2 ->
-            match eff2 with
+      | Read_Mem exp1 ->
+        EffectSet.exists (function
             | Write_Mem(exp2) when mem_mem_alias exp1 exp2 -> true
             | Write_Var(s2) when var_mem_alias s2 exp1 -> true
             | Other -> true
             | _ -> false
           ) es2
-      | Write_Mem(exp1) ->
-        EffectSet.exists (fun eff2 ->
-            match eff2 with
+      | Write_Mem exp1 ->
+        EffectSet.exists (function
             | Write_Mem(exp2)
             | Read_Mem(exp2) when mem_mem_alias exp1 exp2 -> true
             | Read_Var(s2)
@@ -379,8 +374,7 @@ let dependency_exists es1 es2 =
             | _ -> false
           ) es2
       | File_IO ->
-        EffectSet.exists (fun eff2 ->
-            match eff2 with
+        EffectSet.exists (function
             | File_IO | Other -> true
             | _ -> false
           ) es2
@@ -429,7 +423,7 @@ let rec partition_block files block edit_effects
     | [] -> ()
     | stmt :: tl -> begin
         match stmt.skind with
-        | Instr(il) ->
+        | Instr il ->
           let here_effects = ref EffectSet.empty in
           let lc = ref 0 in
           let _ =visitCilStmt (new collectEffects lc here_effects
@@ -490,7 +484,7 @@ let rec partition_block files block edit_effects
           end ;
           walk tl
 
-        | Block(b) ->
+        | Block b ->
           walk b.bstmts ;
           walk tl
 
@@ -538,8 +532,7 @@ let partition files edit_effects =
   end ;
   let partitions = ref [] in
   StringMap.iter (fun x file ->
-      iterGlobals file (fun glob ->
-          match glob with
+      iterGlobals file (function
           | GFun(fd,_) ->
             let this_partition = partition_block files fd.sbody edit_effects in
             partitions := this_partition @ !partitions

@@ -97,17 +97,17 @@ let find_str node_map n =
 
 (**/**)
 let noio no = match no with
-  | Some(n) -> Some(n.nid)
+  | Some n -> Some(n.nid)
   | None -> None
 
 let edit_action_to_str node_map ea =
   let io_to_num io = match io with
-    | Some(n) -> n
+    | Some n -> n
     | None -> -1
   in
   let io_to_str io =
     match io with
-    | Some(n) ->  if not !verbose then sprintf "%d" n
+    | Some n ->  if not !verbose then sprintf "%d" n
       else find_str node_map n
     | None -> "-1"
   in
@@ -117,7 +117,7 @@ let edit_action_to_str node_map ea =
                            (io_to_str io)
     | Move(n,no,io) -> sprintf "Move (%d,%s,%s)" n (io_to_str no)
                          (io_to_str io)
-    | Delete(n) -> sprintf "Delete (%d,0,0)" n
+    | Delete n -> sprintf "Delete (%d,0,0)" n
   else
     match ea with
     | Insert(n,no,io) ->
@@ -125,7 +125,7 @@ let edit_action_to_str node_map ea =
     | Move(n,no,io) ->
       sprintf "Move (%s,%s,%d)" (find_str node_map n)
         (io_to_str no) (io_to_num io)
-    | Delete(n) ->
+    | Delete n ->
       sprintf "Delete (%s,0,0)" (find_str node_map n)
 
 let deleted_node = {
@@ -310,7 +310,7 @@ let position_of (node_info : tree_node IntMap.t)
     (parent : tree_node option) (child : tree_node) =
   match parent with
   | None -> None
-  | Some(parent) ->
+  | Some parent ->
     let result = ref None in
     Array.iteri (fun i child' ->
         let child' = node_of_nid node_info child' in
@@ -323,7 +323,7 @@ let position_of_nid (node_info : tree_node IntMap.t)
     (parent : tree_node option) (child_nid : node_id) =
   match parent with
   | None -> None
-  | Some(parent) ->
+  | Some parent ->
     let result = ref None in
     Array.iteri (fun i child' ->
         let child' = node_of_nid node_info child' in
@@ -399,10 +399,10 @@ let generate_script (node_info : tree_node IntMap.t) (t1 : tree_node)
         match yparent with
         | None ->
           s := (Insert(y.nid,noio yparent,ypos)) :: !s
-        | Some(yparent) -> begin
+        | Some yparent -> begin
             let xx = find_node_that_maps_to m yparent in
             match xx with
-            | Some(xx) -> s := (Insert(y.nid,Some(xx.nid),ypos)) :: !s
+            | Some xx -> s := (Insert(y.nid,Some(xx.nid),ypos)) :: !s
             | None     -> s := (Insert(y.nid,Some(yparent.nid),ypos)) :: !s
             (* in the None case, our yParent was moved over, so this works
                inductively *)
@@ -410,7 +410,7 @@ let generate_script (node_info : tree_node IntMap.t) (t1 : tree_node)
       end else begin
         match find_node_that_maps_to m y with
         | None -> printf "generate_script: error: no node that maps to!\n"
-        | Some(x) -> begin
+        | Some x -> begin
             let xparent = parent_of node_info t1 x in
             let yparent = parent_of node_info t2 y in
             let yposition = position_of node_info yparent y in
@@ -420,7 +420,7 @@ let generate_script (node_info : tree_node IntMap.t) (t1 : tree_node)
               if not (NodeMap.mem (xparent,yparent) m) then begin
                 let xx = find_node_that_maps_to m yparent in
                 match xx with
-                | Some(xx) -> s := (Move(x.nid,Some(xx.nid),yposition)) :: !s
+                | Some xx -> s := (Move(x.nid,Some(xx.nid),yposition)) :: !s
                 | None     -> s := (Move(x.nid,Some yparent.nid,yposition)) :: !s
               end
               else if xposition <> yposition then
@@ -467,26 +467,26 @@ let stmt_to_typelabel (s : Cil.stmt) =
   let convert_label l = match l with
     | Label(s,loc,b) -> Label(s,dummyLoc,b)
     | Case(e,loc) -> Case(convert_exp e,dummyLoc)
-    | Default(loc) -> Default(dummyLoc)
+    | Default loc -> Default(dummyLoc)
   in
   let labels = List.map convert_label s.labels in
   let convert_il il =
-    List.map (fun i -> match i with
+    List.map (function
         | Set(lv,e,loc) -> Set(lv,convert_exp e,dummyLoc)
         | Call(lvo,e,el,loc) -> Call(lvo,convert_exp e,convert_exps el,dummyLoc)
         | Asm(a,b,c,d,e,loc) -> Asm(a,b,c,d,e,dummyLoc)
       ) il
   in
   let skind = match s.skind with
-    | Instr(il)  -> Instr(convert_il il)
+    | Instr il -> Instr(convert_il il)
     | Return(eo,l) -> Return(convert_exp_opt eo,dummyLoc)
     | Goto(sr,l) -> Goto(sr,dummyLoc)
-    | Break(l) -> Break(dummyLoc)
-    | Continue(l) -> Continue(dummyLoc)
+    | Break l -> Break(dummyLoc)
+    | Continue l -> Continue(dummyLoc)
     | If(e,b1,b2,l) -> If(convert_exp e,dummyBlock,dummyBlock,l)
     | Switch(e,b,sl,l) -> Switch(convert_exp e,dummyBlock,[],l)
     | Loop(b,l,so1,so2) -> Loop(dummyBlock,l,None,None)
-    | Block(block) -> Block(dummyBlock)
+    | Block block -> Block(dummyBlock)
     | TryFinally(b1,b2,l) -> TryFinally(dummyBlock,dummyBlock,dummyLoc)
     | TryExcept(b1,(il,e),b2,l) ->
       TryExcept(dummyBlock,(convert_il il,convert_exp e),dummyBlock,dummyLoc)
@@ -608,7 +608,7 @@ let fundec_to_ast (node_info : tree_node IntMap.t) (f:Cil.fundec) =
         [| stmt_to_node (wrap_block b1) ; stmt_to_node (wrap_block b2) |]
       in
       Array.concat [instrs;exps;stmts]
-    | Block(block) ->
+    | Block block ->
       let children = List.map stmt_to_node block.bstmts in
       Array.of_list children
   in
@@ -635,7 +635,7 @@ let rec node_to_stmt (node_info : tree_node IntMap.t) (n : tree_node) : Cil.stmt
   let block x =
     if x >= Array.length children then dummyBlock
     else match children.(x).skind with
-      | Block(b) -> b
+      | Block b -> b
       | _ -> begin
           printf "// node_to_stmt: warn: wanted child %d to be a block\n" x ;
           dummyBlock
@@ -666,7 +666,7 @@ let rec node_to_stmt (node_info : tree_node IntMap.t) (n : tree_node) : Cil.stmt
 let ast_to_fundec (node_info : tree_node IntMap.t) (f:Cil.fundec) (n : tree_node) =
   let stmt = node_to_stmt node_info n in
   match stmt.skind with
-  | Block(b) -> { f with sbody = b ; }
+  | Block b -> { f with sbody = b ; }
   | _ ->
     printf "fundec_to_ast: error: wanted child to be a block\n" ;
     failwith "fundec_to_ast"
@@ -688,7 +688,7 @@ let apply_diff (node_info : tree_node IntMap.t) (m : NodeMap.t) (astt1 : node_id
   try
     match s with
     (* delete sub-tree rooted at node x *)
-    | Delete(nid) ->
+    | Delete nid ->
       let node = node_of_nid node_info nid in
       delete node_info node
 
@@ -698,11 +698,11 @@ let apply_diff (node_info : tree_node IntMap.t) (m : NodeMap.t) (astt1 : node_id
 
       (match yopt with
        | None -> printf "apply: error: insert to root?"  ; node_info
-       | Some(yid) ->
+       | Some yid ->
          let ynode = node_of_nid node_info yid in
          (* let ynode = corresponding m ynode in  *)
          let ypos = match ypopt with
-           | Some(x) -> x | None -> 0
+           | Some x -> x | None -> 0
          in
 
          (* Step 1: remove children of X *)
@@ -749,11 +749,11 @@ let apply_diff (node_info : tree_node IntMap.t) (m : NodeMap.t) (astt1 : node_id
       (match yopt with
        | None ->
          printf "apply: error: %s: move to root?\n"  (edit_action_to_str node_info s) ; node_info
-       | Some(yid) ->
+       | Some yid ->
          let ynode = node_of_nid node_info yid in
          (* let ynode = corresponding m ynode in *)
          let ypos = match ypopt with
-           | Some(x) -> x | None -> 0
+           | Some x -> x | None -> 0
          in
          (* Step 1: remove X from its parent *)
 

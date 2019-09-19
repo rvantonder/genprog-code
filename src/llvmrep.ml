@@ -84,7 +84,7 @@ class llvmRep = object (self : 'self_type)
   method serialize ?out_channel ?global_info (filename : string) =
     let fout =
       match out_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_out_bin filename
     in
     Marshal.to_channel fout (llvmRep_version) [] ;
@@ -99,7 +99,7 @@ class llvmRep = object (self : 'self_type)
   method deserialize ?in_channel ?global_info (filename : string) =
     let fin =
       match in_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_in_bin filename
     in
     let version = Marshal.from_channel fin in

@@ -102,8 +102,7 @@ let bad_node_id_to_cdiff_node = Hashtbl.create 255
 
 (* Print out the actions in a readable format. *)
 let debug_action_list () = begin
-  List.iter(fun x ->
-      match x with
+  List.iter(function
         Insert(fn,text,line,text_rec) ->
         Printf.printf "~ Insert, in file %s:\n" fn ;
         List.iter (fun x -> Printf.printf "%s\n" x) text;
@@ -112,7 +111,7 @@ let debug_action_list () = begin
         Printf.printf "~ Delete lines %d through %d in file %s\n" first last fn
       |  Move(fn,text,line,(first,last),text_rec) ->
         Printf.printf "~ Move lines %d through %d to line %d in file %s\n" first last line fn
-      |  Nop(line) -> ()) !final_action_list
+      | Nop line -> ()) !final_action_list
 end
 
 (* Print out the cdiff nodes *)
@@ -211,7 +210,7 @@ let get_last_bracket_line filename starting_line = begin
       (List.length file_lines)
     end
     else begin
-      let this_line = (List.nth file_lines current_line) in
+      let this_line = List.nth file_lines current_line in
       if List.for_all (fun x -> x="}") (Str.split whitespace this_line)
       then begin
         walk (current_line+1)
@@ -440,8 +439,8 @@ let _ =
       if (List.length lr)!=0 then begin
         let lineRange = ref lr in
         lineRange := (List.sort (fun x y -> x - y) !lineRange);
-        let min = (List.hd !lineRange) in
-        let max = (List.nth !lineRange ((List.length !lineRange)-1)) in
+        let min = List.hd !lineRange in
+        let max = List.nth !lineRange ((List.length !lineRange)-1) in
         Hashtbl.add verbose_node_info id (f,min,max)
       end
       else
@@ -659,8 +658,7 @@ let generate_sourcereader_script filename = begin
   let output_name = "Change_Original/"^just_script_name in
   ensure_directories_exist output_name;
   let oc = open_out output_name in
-  List.iter(fun act ->
-      match act with
+  List.iter(function
         Insert(fn, to_insert, line, record) ->
         Printf.fprintf oc "Insert\n";
         Printf.fprintf oc "%d\n" line;
@@ -694,7 +692,7 @@ let generate_sourcereader_script filename = begin
         Printf.fprintf oc "%d\n" first;
         Printf.fprintf oc "%d\n" ((last-first)+1);
         Printf.fprintf oc "###\n"
-      | Nop(line) ->
+      | Nop line ->
         Printf.fprintf oc "FLAGGED! BAD NODE OPERATION!\n";
         Printf.fprintf oc "Near line %d\n" line;
         Printf.fprintf oc "###\n"

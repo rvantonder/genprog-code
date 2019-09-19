@@ -256,8 +256,7 @@ struct
     let c_two = original#copy () in
     let h11, h12 =
       List.partition
-        (fun edit ->
-           match edit with
+        (function
            | Delete(num)
            | Append(num, _)
            | Swap(num,_)
@@ -268,8 +267,7 @@ struct
     in
     let h21, h22 =
       List.partition
-        (fun edit ->
-           match edit with
+        (function
            | Delete(num) | Append(num, _)
            | Swap(num,_) | Replace(num,_)  ->
              List.mem num first_half

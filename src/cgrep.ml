@@ -105,7 +105,7 @@ class cgRep = object (self : 'self_type)
   method serialize ?out_channel ?global_info (filename : string) =
     let fout =
       match out_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_out_bin filename
     in
     Marshal.to_channel fout (cilRep_version) [] ;
@@ -119,7 +119,7 @@ class cgRep = object (self : 'self_type)
   method deserialize ?in_channel ?global_info (filename : string) =
     let fin =
       match in_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_in_bin filename
     in
     let version = Marshal.from_channel fin in
@@ -154,7 +154,7 @@ class cgRep = object (self : 'self_type)
     if subatom_id < (List.length subs) then
       let sub_exp = List.nth subs subatom_id in
       match sub_exp with
-      | Exp(exp) -> begin
+      | Exp exp -> begin
           let expr_str = Pretty.sprint ~width:80 (d_exp () exp) in
           try
             let avg_const = Hashtbl.find !averages (stmt_id,expr_str) in

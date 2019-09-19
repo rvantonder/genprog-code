@@ -102,7 +102,7 @@ let atoms_visited_by_edit_history eh =
         match elt with
         | LaseTemplate _
         | Template _ -> failwith "atoms_visited_by_edit_history: template"
-        | Delete(x) -> AtomSet.singleton x
+        | Delete x -> AtomSet.singleton x
         | Append(where,what) -> AtomSet.singleton where
         | Swap(x,y) -> AtomSet.add y (AtomSet.singleton x)
         | Replace(where,what) -> AtomSet.singleton where
@@ -705,7 +705,7 @@ let nht_connection () =
     | "" -> None
     | x ->
       let sockaddr = match !nht_sockaddr with
-        | Some(sa) -> sa
+        | Some sa -> sa
         | None -> (* build it the first time *)
           let host_entry = Unix.gethostbyname !nht_server in
           let inet_addr = host_entry.Unix.h_addr_list.(0) in
@@ -954,7 +954,7 @@ let add_subdir str =
     else begin
       let dirname = match str with
         | None -> sprintf "%06d" !test_counter
-        | Some(specified) -> specified
+        | Some specified -> specified
       in
       if Sys.file_exists dirname then begin
         let cmd = "rm -rf ./"^dirname in
@@ -1106,7 +1106,7 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
   method serialize ?out_channel ?global_info (filename : string) =
     let fout =
       match out_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_out_bin filename
     in
     Marshal.to_channel fout (cachingRep_version) [] ;
@@ -1120,7 +1120,7 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
   method deserialize ?in_channel ?global_info (filename : string) = begin
     let fin =
       match in_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_in_bin filename
     in
     let version = Marshal.from_channel fin in
@@ -1205,7 +1205,7 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
          let source_dir,_,_ = split_base_subdirs_ext source_name in
          let many_files = List.map (fun (source_name,source_string) ->
              let source_name = match source_name with
-               | Some(source_name) -> source_name
+               | Some source_name -> source_name
                | None ->
                  abort "ERROR: rep: output_source: multiple files,"^
                  " one of which does not have a name\n"
@@ -1218,7 +1218,7 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
                let full_source_name = Filename.concat !prefix source_name in
                ensure_directories_exist full_output_name ;
                (match source_string with
-                | Some(s) ->
+                | Some s ->
                   let fout = open_out full_output_name in
                   output_string fout s ;
                   close_out fout
@@ -1233,7 +1233,7 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
   (**/**)
   method source_name =
     match !already_sourced with
-    | Some(source_names) -> source_names
+    | Some source_names -> source_names
     | None -> []
   (**/**)
 
@@ -1441,11 +1441,11 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
         lfoldl (fun str -> fun int -> Printf.sprintf "%s,%d" str int) "(" ints
       in
       Printf.sprintf "%s%s)" name str
-    | Delete(id) -> Printf.sprintf "d(%d)" id
+    | Delete id -> Printf.sprintf "d(%d)" id
     | Append(dst,src) -> Printf.sprintf "a(%d,%d)" dst src
     | Swap(id1,id2) -> Printf.sprintf "s(%d,%d)" id1 id2
     | Replace(id1,id2) -> Printf.sprintf "r(%d,%d)" id1 id2
-    | LaseTemplate(name) -> Printf.sprintf "l(%s)" name
+    | LaseTemplate name -> Printf.sprintf "l(%s)" name
     | Replace_Subatom(aid,sid,atom) ->
       Printf.sprintf "e(%d,%d,%s)" aid sid (self#atom_to_str atom)
 
@@ -1547,7 +1547,7 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
       like in memory. *)
   method private compute_digest () =
     match !already_digest with
-    | Some(digest_list) -> digest_list
+    | Some digest_list -> digest_list
     | None -> begin
         let source_buffers = self#compute_source_buffers () in
         let digest_list =
@@ -1700,7 +1700,7 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
         if !num_fitness_samples <= count then
           let result = self#internal_check_test_cache test in
           match result with
-          | Some(r) -> raise (Test_Result r)
+          | Some r -> raise (Test_Result r)
           | None -> ()
         else
           (* second, maybe we'll get lucky with the persistent cache *)
@@ -1743,7 +1743,7 @@ class virtual ['gene,'code] cachingRepresentation = object (self : ('gene,'code)
         Must_Run_Test(digest_list,exe_name,source_name,test)
       else ((Have_Test_Result(digest_list, (false, [ [| 0.0 |] ]))))
     end with
-    | Test_Result(x) -> (* additional bookkeeping information *)
+    | Test_Result x -> (* additional bookkeeping information *)
       Have_Test_Result(digest_list,x)
 end
 
@@ -1808,7 +1808,7 @@ class virtual ['gene,'code] faultlocRepresentation = object (self)
   method deserialize ?in_channel ?global_info (filename : string) =
     let fin =
       match in_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> assert(false);
     in
     let version = Marshal.from_channel fin in
@@ -1846,7 +1846,7 @@ class virtual ['gene,'code] faultlocRepresentation = object (self)
   method serialize ?out_channel ?global_info (filename : string) =
     let fout =
       match out_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> assert(false);
     in
     Marshal.to_channel fout (faultlocRep_version) [] ;
@@ -2004,7 +2004,7 @@ class virtual ['gene,'code] faultlocRepresentation = object (self)
            | Replace_mut ->
              (WeightSet.cardinal (self#replace_sources mut_id)) > 0
            | Lase_Template_mut -> true
-           | Template_mut(s) -> (llen (self#template_available_mutations s mut_id)) > 0
+           | Template_mut s -> (llen (self#template_available_mutations s mut_id)) > 0
         ) !mutations
     in
     (* Cannot cache available mutations if nested mutations are enabled; the

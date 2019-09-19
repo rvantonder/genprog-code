@@ -79,7 +79,7 @@ class stringRep = object (self : 'self_type)
   method serialize ?out_channel ?global_info filename =
     let fout =
       match out_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_out_bin filename
     in
     Marshal.to_channel fout (stringRep_version) [] ;
@@ -94,7 +94,7 @@ class stringRep = object (self : 'self_type)
   method deserialize ?in_channel ?global_info filename =
     let fin =
       match in_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_in_bin filename
     in
     let version = Marshal.from_channel fin in
@@ -138,7 +138,7 @@ class stringRep = object (self : 'self_type)
 
   method load_genome_from_string str =
     let scan_history_element b =
-      Scanf.bscanf b "%c" (fun action -> match action with
+      Scanf.bscanf b "%c" (function
           | 'd' -> Scanf.bscanf b "(%d)"    (fun id -> Delete(id))
           | 'a' -> Scanf.bscanf b "(%d,%d)" (fun dst src -> Append(dst, src))
           | 's' -> Scanf.bscanf b "(%d,%d)" (fun id1 id2 -> Swap(id1, id2))
@@ -261,7 +261,7 @@ class stringRep = object (self : 'self_type)
            | Append_mut -> (self#append_source_gen x ()) <> None
            | Swap_mut -> (self#swap_source_gen x ()) <> None
            | Replace_mut -> (self#replace_source_gen x ()) <> None
-           | Template_mut(s) -> (llen (self#template_available_mutations s x)) > 0
+           | Template_mut s -> (llen (self#template_available_mutations s x)) > 0
            | _ -> false
         ) !mutations
     in
@@ -273,7 +273,7 @@ class stringRep = object (self : 'self_type)
   method private weight_set_of_generator gen =
     let rec collect xs =
       match gen () with
-      | Some(x) -> collect (WeightSet.add x xs)
+      | Some x -> collect (WeightSet.add x xs)
       | None -> xs
     in
     collect WeightSet.empty
@@ -334,7 +334,7 @@ class stringRep = object (self : 'self_type)
     liter (fun h ->
         let ts, es =
           match h with
-          | Delete(id) ->
+          | Delete id ->
             [id],  [fun _ -> []]
           | Append(dst, src) ->
             [dst], [fun line -> [ dst, line; 0, self#get src ]]
