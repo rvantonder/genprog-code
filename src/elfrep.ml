@@ -117,7 +117,7 @@ class elfRep = object (self : 'self_type)
   method serialize ?out_channel ?global_info (filename : string) =
     let fout =
       match out_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_out_bin filename
     in
     Marshal.to_channel fout (elfRep_version) [] ;

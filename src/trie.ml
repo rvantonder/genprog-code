@@ -52,7 +52,7 @@ struct
 let debug m =
   let rec helper indent index (Trie(map, value)) =
     begin match value with
-    | Some(value) -> Printf.printf "%s[%s] (%s)\n" indent index value
+    | Some value -> Printf.printf "%s[%s] (%s)\n" indent index value
     | None        -> Printf.printf "%s[%s]\n" indent index
     end;
     OrdMap.iter (fun i m ->
@@ -120,7 +120,7 @@ let debug m =
       | Trie(map, value) ->
         let a =
           match value with
-          | Some(value) -> f (List.rev path) value a
+          | Some value -> f (List.rev path) value a
           | None -> a
         in
         OrdMap.fold (fun i m a -> helper (i::path) m a) map a
@@ -151,7 +151,7 @@ let debug m =
     in
     let crumbs, _, _, value = helper [] x m None in
     match value with
-    | Some(_) ->
+    | Some _ ->
       List.fold_left (fun acc (key, _, _) ->
           key :: acc
         ) [] crumbs

@@ -381,7 +381,7 @@ let distributed_client rep incoming_pop =
           debug "distclient%d: no exchange at end of search\n" !my_comp ;
         end
       end
-    with | Found_repair(rep) -> (found_repair := true; repair := rep)
+    with | Found_repair rep -> (found_repair := true; repair := rep)
          | Server_shutdown -> ()
   in
 

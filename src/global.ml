@@ -136,8 +136,8 @@ let popen ?(stdin=Keep) ?(stdout=Keep) ?(stderr=Keep) cmd args =
       parent fd_in;
       child fd_out fd_in Unix.stdin;
       Some(Unix.out_channel_of_descr fd_out), fd_in
-    | UseChannel(chan) -> None, Unix.descr_of_in_channel chan
-    | UseDescr(descr)  -> None, descr
+    | UseChannel chan -> None, Unix.descr_of_in_channel chan
+    | UseDescr descr -> None, descr
   in
   let fout, stdout =
     match stdout with
@@ -147,8 +147,8 @@ let popen ?(stdin=Keep) ?(stdout=Keep) ?(stderr=Keep) cmd args =
       parent fd_out;
       child fd_in fd_out Unix.stdout;
       Some(Unix.in_channel_of_descr fd_in), fd_out
-    | UseChannel(chan) -> None, Unix.descr_of_out_channel chan
-    | UseDescr(descr)  -> None, descr
+    | UseChannel chan -> None, Unix.descr_of_out_channel chan
+    | UseDescr descr -> None, descr
   in
   let ferr, stderr =
     match stderr with
@@ -158,8 +158,8 @@ let popen ?(stdin=Keep) ?(stdout=Keep) ?(stderr=Keep) cmd args =
       parent fd_out;
       child fd_in fd_out Unix.stderr;
       Some(Unix.in_channel_of_descr fd_in), fd_out
-    | UseChannel(chan) -> None, Unix.descr_of_out_channel chan
-    | UseDescr(descr)  -> None, descr
+    | UseChannel chan -> None, Unix.descr_of_out_channel chan
+    | UseDescr descr -> None, descr
   in
   incr popen_gc_count ;
   if (!popen_gc_count == 0) || (!popen_gc_count > 1000) then begin

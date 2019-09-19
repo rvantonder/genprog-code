@@ -162,7 +162,7 @@ class minimizableCObject = object(self)
   method copy () =
     match !base with
       None -> ({< base = ref None >})
-    | Some(base) ->
+    | Some base ->
       ({< base = ref (Some(copy base)) >})
 
 end

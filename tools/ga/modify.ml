@@ -474,7 +474,7 @@ let rec mutation ?(force=false) (* require a mutation? *)
     if force then begin
       (match !must_modify_step with
       | None -> ()
-      | Some(x) -> debug "must modify %d, did not\n" x
+      | Some x -> debug "must modify %d, did not\n" x
       ) ; 
       assert(not force);
     end ;
@@ -756,7 +756,7 @@ let fitness (i : individual)
       (* we break ties in favor of the smallest 'diff' size *) 
       let cmd = Printf.sprintf "diff -e %s %s | wc -c > %s" 
         source_out !baseline_file size_str in 
-      let our_size = (match Stats2.time "size diff" Unix.system cmd with
+      let our_size = match Stats2.time "size diff" Unix.system cmd with
       | Unix.WEXITED(0) -> begin 
         try 
           let fin = open_in size_str in
@@ -766,7 +766,7 @@ let fitness (i : individual)
         with _ -> max_int 
       end 
       | _ -> max_int 
-      ) in
+       in
       (* note when we got this variant for debugging purposes *) 
       let now = Unix.gettimeofday () in 
       let better = 
@@ -1150,7 +1150,7 @@ let main () = begin
     end ; 
 
 
-    let source_out = (!filename ^ "-baseline.c") in 
+    let source_out = !filename ^ "-baseline.c" in 
     baseline_file := source_out ; 
     let fout = open_out source_out in 
     dumpFile defaultCilPrinter fout source_out file ;
@@ -1224,7 +1224,7 @@ let main () = begin
 		  flush !debug_out ;
 		  (*v_*)
 
-        let source_out = (!filename ^ "-" ^ !input_params ^ "-best.c") in 
+        let source_out = !filename ^ "-" ^ !input_params ^ "-best.c" in 
         let fout = open_out source_out in 
         dumpFile defaultCilPrinter fout source_out best_file ;
         close_out fout ; 
@@ -1249,8 +1249,8 @@ let main () = begin
         ((float !total_number_of_micromutations) /. 
         (float !total_number_of_macromutations)) ; 
 
-      let comp_fail = ((Int32.to_float (Int32.of_int !compile_fail)) /. (Int32.to_float (Int32.of_int !compile_tried))) in
-      let comp_fail2 = ((Int32.to_float (Int32.of_int !compile_fail)) /. (Int32.to_float (Int32.of_int !total_fitness_evals))) in
+      let comp_fail = (Int32.to_float (Int32.of_int !compile_fail)) /. (Int32.to_float (Int32.of_int !compile_tried)) in
+      let comp_fail2 = (Int32.to_float (Int32.of_int !compile_fail)) /. (Int32.to_float (Int32.of_int !total_fitness_evals)) in
       debug "Percent of unique variants that failed to compile: %d/%d = %g\n" 
         !compile_fail !compile_tried comp_fail; 
       debug "Percent possibly-cached fitness evals that failed to compile: %d/%d = %g\n" 
@@ -1259,7 +1259,7 @@ let main () = begin
       if !exit_code then begin
 	(match !most_fit with
 	   | None -> exit 1
-	   | Some(_) -> exit 0);
+	   | Some _ -> exit 0);
       end
     in 
     print_best_output := to_print_best_output ;

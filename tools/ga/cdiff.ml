@@ -273,7 +273,7 @@ let parent_of_nid node_map tree some_nid =
 let position_of node_map (parent : tree_node option) child =
   match parent with
   | None -> None
-  | Some(parent) -> 
+  | Some parent -> 
     let result = ref None in 
     Array.iteri (fun i child' ->
 	  let child' = node_of_nid node_map child' in 
@@ -285,7 +285,7 @@ let position_of node_map (parent : tree_node option) child =
 let position_of_nid node_map (parent : tree_node option) child_nid =
   match parent with
   | None -> None
-  | Some(parent) -> 
+  | Some parent -> 
     let result = ref None in 
     Array.iteri (fun i child' ->
 	  let child' = node_of_nid node_map child' in
@@ -338,11 +338,11 @@ type edit_action =
   | Delete of int 
 
 let noio no = match no with
-  | Some(n) -> Some(n.nid)
+  | Some n -> Some(n.nid)
   | None -> None 
 
 let io_to_str io = match io with
-  | Some(n) -> sprintf "%d" n
+  | Some n -> sprintf "%d" n
   | None -> "-1" 
 
 let edit_action_to_str ea = match ea with
@@ -350,7 +350,7 @@ let edit_action_to_str ea = match ea with
     (io_to_str io)
   | Move(n,no,io) -> sprintf "Move (%d,%s,%s)" n (io_to_str no) 
     (io_to_str io)
-  | Delete(n) -> sprintf "Delete (%d,0,0)" n
+  | Delete n -> sprintf "Delete (%d,0,0)" n
 
 (* Prints an edit action more verbosely - with line numbers. *)
 (* TODO: Derive line numbers for child inserts (or make a best guess...) *)
@@ -366,7 +366,7 @@ match ea with
     sprintf "Node %d: %d\n" n (Hashtbl.find stmtids_to_lines s_id)
   | Move(n,no,io) -> sprintf "Move (%d,%s,%s)" n (io_to_str no) 
     (io_to_str io)
-  | Delete(n) -> sprintf "Delete (%d,0,0)" n
+  | Delete n -> sprintf "Delete (%d,0,0)" n
 
     *)
 (*
@@ -391,10 +391,10 @@ let generate_script node_map t1 t2 m =
       match yparent with
       | None -> 
         s := (Insert(y.nid,noio yparent,ypos)) :: !s 
-      | Some(yparent) -> begin
+      | Some yparent -> begin
         let xx = find_node_that_maps_to m yparent in
         match xx with
-        | Some(xx) -> s := (Insert(y.nid,Some(xx.nid),ypos)) :: !s 
+        | Some xx -> s := (Insert(y.nid,Some(xx.nid),ypos)) :: !s 
         | None     -> s := (Insert(y.nid,Some(yparent.nid),ypos)) :: !s 
           (* in the None case, our yParent was moved over, so this works
              inductively *) 
@@ -404,7 +404,7 @@ let generate_script node_map t1 t2 m =
     end else begin
       match find_node_that_maps_to m y with
       | None -> printf "generate_script: error: no node that maps to!\n"
-      | Some(x) -> begin
+      | Some x -> begin
         let xparent = parent_of node_map t1 x in
         let yparent = parent_of node_map t2 y in 
         let yposition = position_of node_map yparent y in 
@@ -414,7 +414,7 @@ let generate_script node_map t1 t2 m =
           if not (NodeMap.mem (xparent,yparent) m) then begin 
             let xx = find_node_that_maps_to m yparent in
             match xx with
-            | Some(xx) -> s := (Move(x.nid,Some(xx.nid),yposition)) :: !s 
+            | Some xx -> s := (Move(x.nid,Some(xx.nid),yposition)) :: !s 
             | None     -> s := (Move(x.nid,Some yparent.nid,yposition)) :: !s
           end 
 	  else if xposition <> yposition then 
@@ -447,26 +447,26 @@ let stmt_to_typelabel (s : Cil.stmt) =
   let convert_label l = match l with
     | Label(s,loc,b) -> Label(s,dummyLoc,b) 
     | Case(e,loc) -> Case(e,dummyLoc)
-    | Default(loc) -> Default(dummyLoc)
+    | Default loc -> Default(dummyLoc)
   in 
   let labels = List.map convert_label s.labels in
   let convert_il il = 
-    List.map (fun i -> match i with
+    List.map (function
       | Set(lv,e,loc) -> Set(lv,e,dummyLoc)
       | Call(lvo,e,el,loc) -> Call(lvo,e,el,dummyLoc) 
       | Asm(a,b,c,d,e,loc) -> Asm(a,b,c,d,e,dummyLoc)
     ) il 
   in
   let skind = match s.skind with
-    | Instr(il)  -> Instr(convert_il il) 
+    | Instr il -> Instr(convert_il il) 
     | Return(eo,l) -> Return(eo,dummyLoc) 
     | Goto(sr,l) -> Goto(sr,dummyLoc) 
-    | Break(l) -> Break(dummyLoc) 
-    | Continue(l) -> Continue(dummyLoc) 
+    | Break l -> Break(dummyLoc) 
+    | Continue l -> Continue(dummyLoc) 
     | If(e,b1,b2,l) -> If(e,dummyBlock,dummyBlock,l)
     | Switch(e,b,sl,l) -> Switch(e,dummyBlock,[],l) 
     | Loop(b,l,so1,so2) -> Loop(dummyBlock,l,None,None) 
-    | Block(block) -> Block(dummyBlock) 
+    | Block block -> Block(dummyBlock) 
     | TryFinally(b1,b2,l) -> TryFinally(dummyBlock,dummyBlock,dummyLoc) 
     | TryExcept(b1,(il,e),b2,l) ->
       TryExcept(dummyBlock,(convert_il il,e),dummyBlock,dummyLoc) 
@@ -527,7 +527,7 @@ let fundec_to_ast node_map (f:Cil.fundec) =
         [| stmt_to_node (wrap_block b1) ; stmt_to_node (wrap_block b2) |] 
       | TryExcept(b1,(il,e),b2,l) ->
         [| stmt_to_node (wrap_block b1) ; stmt_to_node (wrap_block b2) |] 
-      | Block(block) -> 
+      | Block block -> 
        (* Printf.printf "HELLO!\n"; *)
         let children = List.map stmt_to_node block.bstmts in
           Array.of_list children 
@@ -574,7 +574,7 @@ let rec node_to_stmt node_map n =
 
     if x >= Array.length children then dummyBlock 
     else match children.(x).skind with
-    | Block(b) -> b
+    | Block b -> b
     | _ -> begin 
       printf "// node_to_stmt: warn: wanted child %d to be a block\n" x ;
       (*
@@ -607,14 +607,14 @@ let rec node_to_stmt node_map n =
 let ast_to_fundec node_map (f:Cil.fundec) n =
   let stmt = node_to_stmt node_map n in 
 	match stmt.skind with 
-  | Block(b) -> { f with sbody = b ; } 
+  | Block b -> { f with sbody = b ; } 
   | _ -> 
     printf "fundec_to_ast: error: wanted child to be a block\n" ;
     failwith "fundec_to_ast" 
 
 let corresponding m y =
   match find_node_that_maps_to m y with
-  | Some(x) -> x
+  | Some x -> x
   | None -> y
 
 
@@ -630,7 +630,7 @@ let apply_diff (node_map : tree_node IntMap.t) (m) (astt1) (astt2) (s) : tree_no
   try
     match s with
     (* delete sub-tree rooted at node x *)
-    | Delete(nid) -> 
+    | Delete nid -> 
       let node = node_of_nid node_map nid in 
 		delete node_map node 
 
@@ -640,11 +640,11 @@ let apply_diff (node_map : tree_node IntMap.t) (m) (astt1) (astt2) (s) : tree_no
 		
 		(match yopt with
 		| None -> printf "apply: error: insert to root?"  ; node_map
-		| Some(yid) -> 
+		| Some yid -> 
           let ynode = node_of_nid node_map yid in 
           (* let ynode = corresponding m ynode in  *)
           let ypos = match ypopt with
-			| Some(x) -> x | None -> 0 
+			| Some x -> x | None -> 0 
           in 
 
           (* Step 1: remove children of X *) 
@@ -691,11 +691,11 @@ let apply_diff (node_map : tree_node IntMap.t) (m) (astt1) (astt2) (s) : tree_no
       (match yopt with
       | None -> 
 		printf "apply: error: %s: move to root?\n"  (edit_action_to_str s) ; node_map
-      | Some(yid) -> 
+      | Some yid -> 
         let ynode = node_of_nid node_map yid in 
         (* let ynode = corresponding m ynode in *)
         let ypos = match ypopt with
-        | Some(x) -> x | None -> 0 
+        | Some x -> x | None -> 0 
         in 
         (* Step 1: remove X from its parent *)
         
@@ -746,8 +746,7 @@ let gendiff f1 f2 diff_out data_out =
   (* save all of file 1's function names in f1ht *)
   let _ = 
 	iterGlobals f1 
-	  (fun g1 ->
-		match g1 with
+	  (function
 		| GFun(fd,l) -> Hashtbl.add f1ht fd.svar.vname fd 
 		| _ -> () 
 	  ) 
@@ -760,8 +759,7 @@ let gendiff f1 f2 diff_out data_out =
   let node_map =
 	foldGlobals f2 
 	  (fun node_map ->
-		fun g2 ->
-		  match g2 with
+		function
 		  | GFun(fd2,l) when Hashtbl.mem f1ht fd2.svar.vname -> begin
 			let name = fd2.svar.vname in
 			let fd1 = Hashtbl.find f1ht name in
@@ -821,8 +819,7 @@ let gendiff f1 f2 diff_out data_out =
 let apply_diff_to_file f1 node_map patch_ht data_ht myprint =
   foldGlobals f1 
 	(fun node_map ->
-	  fun g1 ->
-		match g1 with
+	  function
 		| GFun(fd1,l) when Hashtbl.mem patch_ht fd1.svar.vname -> 
 		  begin
 			let name = fd1.svar.vname in

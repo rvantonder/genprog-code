@@ -237,7 +237,7 @@ Analyzing compilation unit
 *)
 let get_standard_headers () =
   match !standard_headers with
-  | Some(x) -> x
+  | Some x -> x
   | None when not !ignore_standard_headers -> []
   | None -> begin
       let tfile = Filename.temp_file "genprog" "headers" in
@@ -740,8 +740,7 @@ class covVisitor variant prototypes coverage_outname found_fmsg =
       let missing_proto n vtyp =
         match vtyp with
         | TFun(_,_,_,tattrs) ->
-          List.exists (fun tattr ->
-              match tattr with
+          List.exists (function
               | Attr("missingproto",_) -> true
               | _ -> false
             ) tattrs
@@ -1029,7 +1028,7 @@ class insertionVisitor
       let new_s = visitCilStmt (new labelRenameVisitor used_labels) (copy new_s) in
       let new_s =
         match update with
-        | Some(f) -> f do_append old_s new_s
+        | Some f -> f do_append old_s new_s
         | _       -> new_s
       in
       if not do_append then begin
@@ -1109,7 +1108,7 @@ class templateReplace
               | _ -> DoChildren)
            end else DoChildren
          | _ -> DoChildren)
-      | Instr(_) ->  DoChildren
+      | Instr _ ->  DoChildren
       | _ -> DoChildren
 
     method vexpr exp =
@@ -1228,7 +1227,7 @@ class laseTemplateVisitor
         let s' = copy (IntMap.find s.sid stmts_to_change) in
         let _ =
           match update with
-          | Some(f) -> f false s s'
+          | Some f -> f false s s'
           | None    -> s'
         in
         s'.labels <- possibly_label s' template_name s.sid ;
@@ -1458,8 +1457,8 @@ let rec toposort_one instantiations visited gs ((d,b,n) as tag) =
            alignment when processing a definition, the current tag boolean is
            correct when accessed in [vtype]. *)
 
-        | SizeOf(t)   -> ignore (self#vtype t); SkipChildren
-        | AlignOf(t)  -> ignore (self#vtype t); SkipChildren
+        | SizeOf t -> ignore (self#vtype t); SkipChildren
+        | AlignOf t -> ignore (self#vtype t); SkipChildren
 
         (* We also need the definitions of p ointed-to types when doing pointer
            match since incrementing a pointer adjusts it by a multiple of the
@@ -1545,7 +1544,7 @@ let toposort_globals ?roots:((roots: global list) = []) (globals: global list) =
   let filter_map f xs =
     List.rev (List.fold_left (fun ys x ->
         match f x with
-        | Some(y) -> y :: ys
+        | Some y -> y :: ys
         | None    -> ys
       ) [] xs)
   in
@@ -1576,7 +1575,7 @@ let toposort_globals ?roots:((roots: global list) = []) (globals: global list) =
           | _ -> ()
         end;
         Hashtbl.replace instantiations (d,true,n) g
-      | Some(tag) -> Hashtbl.add instantiations tag g
+      | Some tag -> Hashtbl.add instantiations tag g
       | None      -> ()
     ) globals;
 
@@ -1657,7 +1656,7 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
   method serialize ?out_channel ?global_info (filename : string) =
     let fout =
       match out_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_out_bin filename
     in
     Marshal.to_channel fout (cilRep_version) [] ;
@@ -1683,7 +1682,7 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
   method deserialize ?in_channel ?global_info (filename : string) = begin
     let fin =
       match in_channel with
-      | Some(v) -> v
+      | Some v -> v
       | None -> open_in_bin filename
     in
     let version = Marshal.from_channel fin in
@@ -1901,8 +1900,8 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
 
   method atom_to_str atom =
     let doc = match atom with
-      | Exp(e) -> d_exp () e
-      | Stmt(s) -> dn_stmt () (mkStmt s)
+      | Exp e -> d_exp () e
+      | Stmt s -> dn_stmt () (mkStmt s)
     in
     Pretty.sprint ~width:80 doc
 
@@ -2359,7 +2358,7 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
     let all_sids =
       match dst.unique_appends with
       | None -> !fix_localization
-      | Some(valid) ->
+      | Some valid ->
         lfilt (fun (n,_) -> AtomSet.mem n valid) !fix_localization
     in
     let sids =
@@ -2497,15 +2496,15 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
       let all_vars = IntSet.union pos_info.local_ids pos_info.global_ids in
       let rec internal_match = function
         | Const _ | SizeOf _ | SizeOfStr _ | AlignOf _ -> true
-        | AlignOfE(e) | UnOp(_,e,_) | CastE(_,e) | SizeOfE(e) -> internal_match e
+        | AlignOfE(e) | UnOp(_,e,_) | CastE(_,e) | SizeOfE e -> internal_match e
         | BinOp(_,e1,e2,_) -> (internal_match e1) && (internal_match e2)
         | Question(e1,e2,e3,_) ->
           (internal_match e1) && (internal_match e2) && (internal_match e3)
         | Lval(h,o) | AddrOf(h,o) | StartOf(h,o) ->
           begin
             let host = function
-              | Var(v) -> IntSet.mem v.vid all_vars
-              | Mem(e) -> internal_match e
+              | Var v -> IntSet.mem v.vid all_vars
+              | Mem e -> internal_match e
             in
             let rec offset = function
               | NoOffset -> true
@@ -2528,8 +2527,8 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
              (get_exp_vars e3))
       | Lval(h,o) | AddrOf(h,o) | StartOf(h,o) ->
         let host = function
-          | Var(v) -> IntSet.singleton v.vid
-          | Mem(e) -> get_exp_vars e
+          | Var v -> IntSet.singleton v.vid
+          | Mem e -> get_exp_vars e
         in
         let rec offset = function
           | NoOffset -> IntSet.empty
@@ -2559,10 +2558,10 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
       List.fold_left
         (fun current constrnt ->
            match constrnt with
-           | Ref(other_hole) ->
+           | Ref other_hole ->
              let other_refs = get_exp_refs other_hole assignment in
              PairSet.inter other_refs current
-           | HasType(name) ->
+           | HasType name ->
              (* fixme: see my note on hasType for lvals for the fragility of this
                 constraint, which must be tested *)
              PairSet.filter
@@ -2575,7 +2574,7 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
                   (* fixme: check this comparison *)
                   typ_as_str = name)
                current
-           | HasVar(name) ->
+           | HasVar name ->
              PairSet.filter
                (fun (stmt_id,subatom_id) ->
                   let all_subatoms = self#get_subatoms ~fault_src:false stmt_id in
@@ -2599,7 +2598,7 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
       List.fold_left
         (fun current constrnt ->
            match constrnt with
-           | Ref(other_hole) ->
+           | Ref other_hole ->
              debug "looking for: %s\n" other_hole;
              let ht,sid,sb = StringMap.find other_hole assignment in
              begin
@@ -2621,7 +2620,7 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
                  IntSet.inter current this_exps_vars
                | HLval -> IntSet.inter (IntSet.singleton sid) current
              end
-           | HasType(str) ->
+           | HasType str ->
              (* possible fixme: chances are decent that this comparision will be fragile, because
                 it depends on how cil prints out the name internally, but we'll
                 test to see how bad it is.  Worst comes to worse, we can
@@ -2635,7 +2634,7 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
                   (* again, fixme: check the rules for string comparison to make sure this isn't broken.*)
                   typ_as_str = str
                ) current
-           | HasVar(str)  ->
+           | HasVar str ->
              IntSet.filter
                (fun candidate_vid ->
                   let varinfo = IntMap.find candidate_vid !varmap in
@@ -2655,7 +2654,7 @@ class virtual ['gene] cilRep  = object (self : 'self_type)
       List.fold_left
         (fun current constrnt ->
            match constrnt with
-           | HasVar(v) ->
+           | HasVar v ->
              IntSet.filter
                (fun stmt_id ->
                   let stmt_info = self#get_fix_space_info stmt_id in
@@ -2911,7 +2910,7 @@ class patchCilRep = object (self : 'self_type)
       unexpected *)
   method load_genome_from_string str =
     let scan_history_element b =
-      Scanf.bscanf b "%c" (fun action -> match action with
+      Scanf.bscanf b "%c" (function
           | 'l' -> Scanf.bscanf b "(%s@)"   (fun name -> LaseTemplate(name))
           | 'd' -> Scanf.bscanf b "(%d)"    (fun id -> Delete(id))
           | 'a' -> Scanf.bscanf b "(%d,%d)" (fun dst src -> Append(dst,src))
@@ -3075,8 +3074,8 @@ class patchCilRep = object (self : 'self_type)
       block
     in
     match h with
-    | LaseTemplate(name) -> [new laseTemplateVisitor ~update name allow]
-    | Delete(id) -> make_replace "del" id mkEmptyStmt
+    | LaseTemplate name -> [new laseTemplateVisitor ~update name allow]
+    | Delete id -> make_replace "del" id mkEmptyStmt
     | Append(dst, src) ->
       if not (allow dst) then []
       else
@@ -3332,10 +3331,10 @@ class astCilRep = object(self)
   method put stmt_id (stmt : cilRep_atom) =
     let file = self#get_file stmt_id in
     (match stmt with
-     | Stmt(stmt) ->
+     | Stmt stmt ->
        visitCilFileSameGlobals (my_put stmt_id stmt) file;
        visitCilFileSameGlobals (new fixPutVisitor) file;
-     | Exp(e) -> failwith "cilRep#put of Exp subatom" );
+     | Exp e -> failwith "cilRep#put of Exp subatom" );
 
     (**/**)
   method private internal_compute_source_buffers () = begin
@@ -3420,8 +3419,8 @@ class astCilRep = object(self)
     let file = self#get_file stmt_id in
     super#replace_subatom stmt_id subatom_id atom ;
     match atom with
-    | Stmt(x) -> failwith "cilRep#replace_atom_subatom"
-    | Exp(e) ->
+    | Stmt x -> failwith "cilRep#replace_atom_subatom"
+    | Exp e ->
       visitCilFileSameGlobals
         (new replaceSubatomVisitor stmt_id subatom_id e)
         file
@@ -3498,8 +3497,7 @@ let _ =
             if !Errormsg.hadErrors then
               Errormsg.parse_error
                 "cilRep: fill_va_table: failure while preprocessing stdio header file declarations\n";
-            iterGlobals cilfile (fun g ->
-                match g with
+            iterGlobals cilfile (function
                 | GVarDecl(vi,_) | GVar(vi,_,_) when lmem vi.vname vnames ->
                   let decls = ref [] in
                   let visitor = object (self)
@@ -3513,7 +3511,7 @@ let _ =
 
                     method vtype t =
                       match t with
-                      | TNamed(_) ->
+                      | TNamed _ ->
                         ChangeDoChildrenPost(unrollType t, fun t -> self#depend t; t)
                       | _ ->
                         self#depend t; DoChildren

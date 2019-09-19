@@ -328,7 +328,7 @@ let test_fitness generation (rep : ('a,'b) Rep.representation) =
        applicable *)
     let (sample_fitness, fitness),rest =
       match (rep#fitness()) with
-      | Some(f) -> (f,f),None
+      | Some f -> (f,f),None
       | None ->
         if !sample < 1.0 then
           match !sample_strategy with

@@ -131,14 +131,14 @@ let array_ify e1 =
   match e1 with
   | CReal(i,_,_) -> CFloatArray([| i |])
   | CInt64(i,_,_) -> CFloatArray([| Int64.to_float i |])
-  | CFloatArray(x) -> e1
+  | CFloatArray x -> e1
   | _ -> failwith "array_ify"
 
 let real_ify e1 =
   match e1 with
   | CReal(i,_,_) -> i
   | CInt64(i,_,_) -> Int64.to_float i
-  | CFloatArray(a) -> a.(0)
+  | CFloatArray a -> a.(0)
   | _ ->
     ignore (Pretty.printf "%a\n" d_const e1) ;
     failwith "real_ify"
@@ -287,7 +287,7 @@ let docast tau c = match tau, c with
 let const_is_zero c = match c with
   | CReal(j,_,_) -> j = 0.
   | CInt64(j,_,_) -> j = Int64.zero
-  | CFloatArray(a) -> a = [| 0. |]
+  | CFloatArray a -> a = [| 0. |]
   | _ -> failwith "const_is_zero"
 
 (*************************************************************************
@@ -353,7 +353,7 @@ let load_texture tname =
                                                                           * Symbolic Execution
  *************************************************************************)
 let is_not_const e =  match e with
-  | Const(_) -> false
+  | Const _ -> false
   | _ -> true
 
 
@@ -501,7 +501,7 @@ and get_from_env ?(warn=true) lv =
       | Var(va),Field(fi,NoOffset) when is_xyz_field fi -> begin
           let outer = (get_from_env (Var(va),NoOffset)) in
           match outer with
-          | CFloatArray(fa) ->
+          | CFloatArray fa ->
             let len = String.length fi.fname in
             let arr = Array.init len (fun i ->
                 let xyz = fi.fname.[i] in
@@ -540,7 +540,7 @@ and note_value e res =
   match res with
   | CInt64(_)
   | CReal(_)
-  | CFloatArray(_) -> begin
+  | CFloatArray _ -> begin
       Hashtbl.replace output_values (!sid,e) () ;
       Hashtbl.add output (!sid,e) res
     end
@@ -552,13 +552,13 @@ and eval_block b =
 and ee e =
   let res =
     match e with
-    | Const(c) -> c
+    | Const c -> c
     | StartOf(lv)
-    | Lval(lv) -> get_from_env lv
+    | Lval lv -> get_from_env lv
     | UnOp(Neg,e,_) -> begin match ee e with
         | CInt64(i,k,_) -> CInt64(Int64.neg i,k,None)
         | CReal(f,k,_) -> CReal(0.0 -. f,k,None)
-        | CFloatArray(fa) -> CFloatArray(Array.map (fun i -> 0.0 -. i) fa)
+        | CFloatArray fa -> CFloatArray(Array.map (fun i -> 0.0 -. i) fa)
         | _ -> failwith "unop neg"
       end
     | UnOp(LNot,e,_) -> begin match ee e with
@@ -924,7 +924,7 @@ and eval_instr ?(raise_retval=false) i =
 and eval_stmt s =
   sid := s.sid ;
   match s.skind with
-  | Instr(il) -> List.iter eval_instr il
+  | Instr il -> List.iter eval_instr il
   | Return(Some(e),_) ->
     let c = ee e in
     raise (My_Return (Some(c)))
@@ -947,7 +947,7 @@ and eval_stmt s =
       with My_Break -> finished := true
          | My_Continue -> failwith "eval_stmt continue"
     done
-  | Block(b) -> eval_block b
+  | Block b -> eval_block b
   | Return(None,_) -> raise (My_Return (None))
   | _ -> failwith "eval_stmt"
 
@@ -963,7 +963,7 @@ let compute_average_values ?(trials=1000) ast meth =
   for trial = 1 to trials do
     if trial mod 200 = 0 then debug "trial %d\n" trial ;
     Hashtbl.clear env ;
-    iterGlobals ast (fun glob -> match glob with
+    iterGlobals ast (function
         | GVar(va,init,_) ->
           (*
             Pretty.printf "GVar %s %a\n" va.vname
@@ -998,13 +998,13 @@ let compute_average_values ?(trials=1000) ast meth =
 
   (match average_list !retvals with
    | None -> ()
-   | Some(v) -> return_averages := v ) ;
+   | Some v -> return_averages := v ) ;
 
   Hashtbl.iter (fun (sid,expr) _ ->
       let all_observed = Hashtbl.find_all output (sid,expr) in
       match average_list all_observed with
       | None -> ()
-      | Some(avg) ->
+      | Some avg ->
         let expr_str = Pretty.sprint ~width:80 (d_exp () expr) in
         Hashtbl.replace final_averages (sid,expr_str) avg
     ) output_values ;
@@ -1017,8 +1017,7 @@ let compute_average_values ?(trials=1000) ast meth =
 class removeCastsVisitor = object
   inherit nopCilVisitor
   method vexpr v =
-    ChangeDoChildrenPost(v,(fun v ->
-        match v with
+    ChangeDoChildrenPost(v,(function
         | CastE(tau,e) -> e
         | _ -> v
       ))
@@ -1036,7 +1035,7 @@ let print_cg_func ast filename =
         if loc.file = "INTERNAL" || loc.file = "<compiler builtins>" then
           ()
         else match glob with
-          | GType(_) -> () (* do not print out typedefs! *)
+          | GType _ -> () (* do not print out typedefs! *)
           | GFun(fundec,l) ->
             let new_type =
               match fundec.svar.vtype with
@@ -1241,8 +1240,7 @@ class ruleOneVisitor count desired = object
     | _ -> DoChildren
   method vexpr e =
     ChangeDoChildrenPost(e,
-                         (fun e ->
-                            match e with
+                         (function
                             | BinOp(op,Const(c),e',t)
                             | BinOp(op,e',Const(c),t) ->
                               incr count ;
@@ -1362,7 +1360,7 @@ let pellacini_loop original method_name incoming seqno =
         this_retval = compute_average_values incoming method_name in
     (match !original_retval with
      | None -> original_retval := Some(this_retval) ;
-     | Some(e) -> ()
+     | Some e -> ()
     ) ;
 
     let rule_one_count = ref 0 in
@@ -1401,7 +1399,7 @@ let pellacini_loop original method_name incoming seqno =
             incoming method_name in
         let original_retval = match !original_retval with
           | None -> failwith "normalize to original retval"
-          | Some(e) -> e
+          | Some e -> e
         in
         let delta = binop (Int64.sub) (-.) original_retval this_retval in
         visitCilFileSameGlobals (my_normalize_visitor method_name delta) variant;

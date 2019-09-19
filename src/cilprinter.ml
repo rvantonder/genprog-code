@@ -51,8 +51,7 @@ let prep_cil_file_for_output cilfile =
     if !is_valgrind then begin
       (* CLG: GIANT HACK FOR VALGRIND BUGS *)
       {cilfile with globals =
-                      lfilt (fun g ->
-                          match g with
+                      lfilt (function
                             GVarDecl(vinfo,_) ->
                             (match vinfo.vstorage with
                                Extern when vinfo.vname = "__builtin_longjmp" -> false
@@ -62,8 +61,7 @@ let prep_cil_file_for_output cilfile =
   in
   let cilfile =
     {cilfile with globals =
-                    lfilt (fun g ->
-                        match g with
+                    lfilt (function
                         | GVarDecl(vi,l) when
                             (not !printCilAsIs && Hashtbl.mem Cil.builtinFunctions vi.vname) ->
                           (* This prevents the printing of all of those 'compiler built-in'

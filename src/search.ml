@@ -380,7 +380,7 @@ let mutate ?(test = false)  (variant : ('a,'b) Rep.representation) =
           variant#swap_sources x |> random |> result#swap x
         | Replace_mut when has_sources variant#replace_sources ->
           variant#replace_sources x |> random |> result#replace x
-        | Template_mut(str) ->
+        | Template_mut str ->
           let templates =
             variant#template_available_mutations str x
           in
@@ -487,7 +487,7 @@ let initialize_ga
 
   let get_fitness =
     match get_fitness with
-    | Some(f) -> f
+    | Some f -> f
     | None -> calculate_fitness 0 original
   in
 
@@ -1116,7 +1116,7 @@ let ww_adaptive_1 (original : ('a,'b) Rep.representation) incoming_pop =
   let fault_atom_of e = match e with
     | Replace(dst,_)
     | Append(dst,_)
-    | Delete(dst) -> dst
+    | Delete dst -> dst
     | _ -> failwith "ww_adaptive: cannot compute fault loc of atom"
   in
   let fix_atom_of e = match e with

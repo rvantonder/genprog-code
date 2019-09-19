@@ -120,7 +120,7 @@ let rec get_varinfo_exp exp =
            Some _ -> acc | None -> get_varinfo_exp e) None es
   in
   match exp with
-  | AddrOf(l) | StartOf(l) | Lval(l) -> get_varinfo_lval l
+  | AddrOf(l) | StartOf(l) | Lval l -> get_varinfo_lval l
   | SizeOfE(e) | AlignOfE(e) | CastE(_,e) | UnOp(_,e,_) -> get_varinfo_exp e
   | BinOp(_,e1,e2,_) -> handle_exps [e1;e2]
   | Question(e1,e2,e3,_) -> handle_exps [e1;e2;e3]
@@ -129,7 +129,7 @@ let rec get_varinfo_exp exp =
 and get_varinfo_lval lval =
   match fst lval with
     Var(v) -> Some(v)
-  | Mem(e) -> get_varinfo_exp e
+  | Mem e -> get_varinfo_exp e
 
 let visitGetList visitFun visitor construct =
   let retval = ref [] in
@@ -1249,7 +1249,7 @@ class template04Pattern02 retval2 = object
             hadd lp_if_ht pre_loop s;
           end;
         end;
-      | Break(loc) -> (begin
+      | Break loc -> (begin
           (* see if the expression includes the binary operation. *)
           match !loop_if_list with
             (lpSt,ifSt) :: rest -> (begin
@@ -1722,7 +1722,7 @@ class template05Pattern01 retval1 = object
     let check_compare_zero e1 e2 =
       if isZero e2 then
         match get_varinfo_exp e1 with
-        | Some(evi) ->
+        | Some evi ->
           List.exists (fun vid -> evi.vid = vid) preceding_call_lv
         | None -> false
       else
@@ -1731,7 +1731,7 @@ class template05Pattern01 retval1 = object
     match s.skind with
     | Instr([Call(Some ret, Lval((Var(v),o)), args, loc)]) ->
       (match get_varinfo_lval ret with
-       | Some(vi) -> preceding_call_lv <- [vi.vid]
+       | Some vi -> preceding_call_lv <- [vi.vid]
        | None -> ()); DoChildren
     | Instr([Set(lv, exp1, loc)]) when (llen preceding_call_lv) > 0 ->
       (match (get_varinfo_lval lv), (get_varinfo_exp exp1) with
@@ -2728,7 +2728,7 @@ end
 
 let get_opt opt retval =
   match opt with
-  | Some(o) -> retval := o :: !retval
+  | Some o -> retval := o :: !retval
   | None -> () (* failwith "Get_opt called on non-Some value." *)
 
 class chkVarWithinBlockVisitor retval = object
@@ -2759,7 +2759,7 @@ class template08Pattern01 retval1 = object
         | Mem(e),_ -> addr_type e
       in
       match addr with
-      | Lval(l) | AddrOf(l) | StartOf(l) -> lval_type l
+      | Lval(l) | AddrOf(l) | StartOf l -> lval_type l
       | CastE(t,_) -> Some(t)
       | _ -> None
     in
@@ -2795,7 +2795,7 @@ class template08Pattern01 retval1 = object
                 begin match base with
                   (* no previous group; start a new one *)
                     None -> Some(addr), [newitem]::groups
-                  | Some(base_exp) ->
+                  | Some base_exp ->
                     if (cmp_exp base_exp addr) <> 0 then
                       (* different group; start a new one *)
                       Some(addr), [newitem]::groups
@@ -2832,7 +2832,7 @@ class template08Pattern01 retval1 = object
     let check_case_labled groups =
       let rst_bstmts =
         lfilt(fun st ->
-            let rst_labels = lfilt(fun lb -> match lb with
+            let rst_labels = lfilt(function
                 | Case (exp,_) -> true
                 | _ -> false
               ) st.labels
